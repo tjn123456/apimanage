@@ -1,5 +1,5 @@
 import React from "react"
-import {HashRouter,Route,Switch} from "react-router-dom"
+import {HashRouter,Route,Switch,Redirect} from "react-router-dom"
 import App from "./App"
 import Home from "./pages/home"
 import Apidebug from "./pages/apidebug"
@@ -25,10 +25,12 @@ export default class Router extends React.Component{
                         {/* 下边的组件可以获取一个数字作为url的参数进行传递，接收参数的方法是，this.props.match.params.number */}
                         <Route paht='/admin' render={()=>
                             <Admin>
+
                                 <Switch>
-                                <Route path='/admin/' component={Apidebug} />
-                                <Route path='/admin/:number' />
-                                <Route path='/apidebug/' component={Apidebug} />
+                                <Route path='/apidebug/:number' component={Apidebug}/>
+                                <Route exact path='/apidebug/' component={Home} />
+                                {/* 重定向根目录到接口目录 */}
+                                <Redirect from="/" to="/apidebug/" />
                                 <Route component={NoMatch} />
                                 </Switch>
                             </Admin>

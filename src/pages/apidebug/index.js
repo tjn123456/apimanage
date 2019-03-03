@@ -2,7 +2,7 @@ import React from "react"
 import { Form, Row, Col, Input, Button, Icon, Card, Select, Tabs, Table, Divider, Modal, message } from "antd"
 import "./index.scss"
 import FormItem from "antd/lib/form/FormItem";
-import axios from "./../../axios/index.js";
+import {get_ajax,post_ajax} from "./../../axios/index.js";
 import TextArea from "antd/lib/input/TextArea";
 import { black, blue } from "ansi-colors";
 
@@ -13,6 +13,8 @@ class Apidebug extends React.Component {
     constructor() {
         super();
         this.state = {
+            apiinfo:{case_id:[]},
+            pushapiinfo:{},
             befun: '',
             assfun: '',
             tabnum: '1',
@@ -21,7 +23,7 @@ class Apidebug extends React.Component {
             tem_value: '',
             column_record: {},
             visible: false,
-            dataSource: {},
+            dataSource: {headers:[],bodys:[],casename: "",assfun: "",befun:"" },
             requrl: '',
             testcase: [
                 { 'id': '1', 'name': 'asdfasdfdsafsadfdsfdsf' },
@@ -31,14 +33,17 @@ class Apidebug extends React.Component {
                 {
                     title: '名称',
                     dataIndex: 'name',
+                    width: 300,
                 },
                 {
                     title: '键',
                     dataIndex: 'key',
+                    width: 300,
                 },
                 {
                     title: '值',
                     dataIndex: 'value',
+                    width: 300,
                 },
                 {
                     title: '操作',
@@ -55,19 +60,13 @@ class Apidebug extends React.Component {
         }
     }
     componentWillMount() {
-        this.request();
-        // let befun,assfun = [this.state.dataSource.befun , this.state.dataSource.assfun]
-        // console.log(befun)
-        // this.setState({
-        //     befun: befun,
-        //     assfun: assfun,
-        // })
+        this.apiinfo_req();
+        console.log(this.state.apiinfo)
     }
 
     // 删除headers和bodys表格中的行
     delparams = (index) => {
         let _dataSource = { ...this.state.dataSource }
-        console.log(_dataSource, index)
         if (this.state.tabnum === '1') {
             _dataSource.headers.splice(index, 1)
         } else if (this.state.tabnum === '2') {
@@ -81,7 +80,9 @@ class Apidebug extends React.Component {
     // 添加headers和bodys表格中的行
     addparams = () => {
         let _dataSource = { ...this.state.dataSource }
+        console.log(_dataSource,this.state.tabnum)
         if (this.state.tabnum === '1') {
+            console.log('ok')
             _dataSource.headers.push({ name: 'lili', key: '请输入', value: '请输入' })
         } else if (this.state.tabnum === '2') {
             _dataSource.bodys.push({ name: 'lucy', key: '请输入', value: '请输入' })
@@ -143,22 +144,55 @@ class Apidebug extends React.Component {
         });
     }
     //渲染mock数据
-    request = () => {
-        axios.get_ajax({
-            url: '/Apicaseinfo',
+    apiinfo_req = () => {
+        post_ajax({
+            url: '/GetApiInfo',
+            data: {
+                "api_id":this.props.match.params.number,
+                "apicase_id":'',
+            }
         }).then((res) => {
-            if (res.code == '201') {
+            console.log(res)
+            if (res.status == '201') {
                 this.setState({
-                    dataSource: res.data,
-                    befun:res.data.befun,
-                    assfun:res.data.assfun,
+                    apiinfo:res.data.data,
                 })
             }
         })
     }
 
-    handleChange = (value) => {
-        console.log(`selected ${value}`);
+    httpaction_handleChange = (value) => {
+        let _apiinfo = { ...this.state.apiinfo }
+        _apiinfo.httpaction=value
+        this.setState({
+            apiinfo:_apiinfo
+        })
+    }
+
+    requrl_handleChange = (e) => {
+        let _apiinfo = { ...this.state.apiinfo }
+        _apiinfo.requrl=e.target.value
+        this.setState({
+            apiinfo:_apiinfo
+        })
+    }
+
+    caseid_handleChange = (value) => {
+        console.log(value)
+        post_ajax({
+            url: '/GetApiInfo',
+            data: {
+                "api_id":"",
+                "apicase_id":value,
+            }
+        }).then((res) => {
+            console.log(res)
+            if (res.status == '201') {
+                this.setState({
+                    
+                })
+            }
+        })
     }
 
     save = () => {
@@ -168,6 +202,7 @@ class Apidebug extends React.Component {
         }
     }
     render() {
+        
         // getFieldDecorator是antd框架内获取表单数据的方法
         const { getFieldDecorator } = this.props.form;
         return (
@@ -175,14 +210,13 @@ class Apidebug extends React.Component {
                 <Card>
                     <Row>
                         <Col span="4">
-                            <Select defaultValue="get" style={{ width: 120 }} onChange={this.handleChange}>
-                                <Option value="get">GET</Option>
-                                <Option value="post">POST</Option>
+                            <Select value={this.state.apiinfo ? this.state.apiinfo.httpaction : "GET"} style={{ width: 120 }} onChange={this.httpaction_handleChange}>
+                                <Option value="GET">GET</Option>
+                                <Option value="POST">POST</Option>
                             </Select>
-
                         </Col>
                         <Col span="13">
-                            <Input value={this.state.requrl} onChange={e => this.setState({ requrl: e.target.value })} addonBefore="Http://" style={{ width: 500 }} />
+                            <Input value={this.state.apiinfo ? this.state.apiinfo.requrl : ""} onChange={this.requrl_handleChange} addonBefore="Http://" style={{ width: 500 }} />
                         </Col>
                         <Col>
                             <Button type="primary" onClick={this.save}>保存<Icon type="save" /></Button>
@@ -199,8 +233,11 @@ class Apidebug extends React.Component {
                                 <div>
                                     <Button type="primary" onClick={this.addparams}><Icon type="plus-square" /></Button>
                                     <Divider type="vertical" />
-                                    <Select defaultValue="请添加用例" style={{ width: 120 }} onChange={this.handleChange}>
-                                        <Option value="1">case1</Option>
+                                    <Select defaultValue="请添加用例" style={{ width: 120 }} onChange={this.caseid_handleChange}>
+                                        {this.state.apiinfo.case_id.map((item) => {
+                                            return <Option key={item.case_id}>{item.casename}</Option>
+                                            })
+                                        }
                                     </Select>
                                     <Divider type="vertical" />
                                     <Button>添加用例</Button>

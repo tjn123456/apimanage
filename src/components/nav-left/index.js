@@ -1,53 +1,46 @@
 import React from 'react'
 import { Menu, Button, Modal, Form, Input, message, Radio, Select } from 'antd'
 import './index.scss'
-import { NavLink } from "react-router-dom"
+import { NavLink,Link } from "react-router-dom"
+import { get_ajax, post_ajax } from "@/axios";
+
 
 const Option = Select.Option;
 const SubMenu = Menu.SubMenu;
-const MenuConfig = [
-    {
-        'id': 1, 'text': '一级测试', 'value': '', 'item':
-            [
-                { 'id': 3, 'text': '二级测试', 'value': '1' },
-                { 'id': 26, 'text': 'bala', 'value': '23','item':[] }
-            ]
-    }, {
-        'id': 5, 'text': '222', 'value': '', 'item':
-            [
-                {
-                    'id': 6, 'text': '权威', 'value': '', 'item':
-                        [
-                            { 'id': 30, 'text': '4级测试', 'value': '123' },
-                        ]
-                }
-            ]
-    }, {
-        'id': 10, 'text': '3级测试', 'value': '111',
-    }
-];
-
 
 
 class Navleft extends React.Component {
     constructor() {
         super();
         this.state = {
-            menuc: MenuConfig,
+            menuc: [],
             visible: false,
-            residences: [
-                { 'id': 1, 'text': '一级测试' },
-                { 'id': 3, 'text': '二级测试' },
-                { 'id': 26, 'text': 'bala' },
-                { 'id': 5, 'text': '222' }],
+            parent: [],
         }
     }
     componentWillMount() {
-        let menuTreeNode = this.renderMenu(this.state.menuc);
-        console.log(menuTreeNode)
+        this.request();
+    }
 
-        this.setState({
-            menuTreeNode
+    componentDidMount() {
+        
+    }
+
+    //获取页面目录数据,modal父级目录数据
+    request = () => {
+        console.log("进入接口")
+        get_ajax({
+            url: '/ApiPath',
+        }).then((res) => {
+            console.log(res)
+            if (res.status == '201') {
+                console.log("接口内部")
+                this.setState({
+                    menuc: res.data.data.menu,
+                    parent: res.data.data.parent,
+                })
+                console.log(this.state.menuc)
+            }
         })
     }
 
@@ -62,7 +55,7 @@ class Navleft extends React.Component {
                 )
             }
             return <Menu.Item title={item.text} key={item.id}>
-                <NavLink to={item.value}>{item.text}</NavLink>
+                <NavLink to={`/apidebug/${item.value}`}>{item.text}</NavLink>
             </Menu.Item>
         })
     }
@@ -78,19 +71,41 @@ class Navleft extends React.Component {
         let catalogue = this.props.form.getFieldsValue();
         this.props.form.validateFields((err, values) => {
             if (!err) {
-                console.log(catalogue.modifier)
+                console.log(values)
                 if (catalogue.modifier === 'parent') {
-                    this.setState({
-                        menuc: this.state.menuc.concat({
-                            name: catalogue.name,
-                            key: '',
-                        }),
-                        visible: false,
-                    }, () => {
-                        this.setState({
-                            menuTreeNode: this.renderMenu(this.state.menuc)
-                        })
-                    });
+                    post_ajax({
+                        url: '/ApiPath',
+                        data: {
+                            "api_name":values.name,
+                            "add_type":"1",
+                            "apifa_id":values.parent_id,
+                        }
+                    }).then((res) => {
+                        if (res.status == '201') {
+                            this.setState({
+                                visible:false
+                            })
+                            this.request();
+                        }
+                    })
+                }else if(catalogue.modifier === 'child'){
+                    post_ajax({
+                        url: '/ApiPath',
+                        data: {
+                            "api_name":values.name,
+                            "add_type":"2",
+                            "apifa_id":values.parent_id,
+                        }
+                    }).then((res) => {
+                        if (res.status == '201') {
+                            this.setState({
+                                visible:false
+                            })
+                            this.request();
+                        }else{
+                            message.error(res.data.data.data)
+                        }
+                    })
                 }
             } else {
                 message.error(`目录内容输入有误`)
@@ -122,7 +137,8 @@ class Navleft extends React.Component {
                 <Menu
                     theme='dark'
                 >
-                    {this.state.menuTreeNode}
+                    {this.renderMenu(this.state.menuc)}
+                
                 </Menu>
                 <Modal
                     title="创建节点"
@@ -146,7 +162,7 @@ class Navleft extends React.Component {
                             }
                         </Form.Item>
                         <Form.Item label="父级目录">
-                            {getFieldDecorator('residence', {
+                            {getFieldDecorator('parent_id', {
                                 initialValue: '',
                                 rules: [],
                             })(
@@ -157,7 +173,7 @@ class Navleft extends React.Component {
                                     optionFilterProp="children"
                                     filterOption={(input, option) => option.props.children.toLowerCase().indexOf(input.toLowerCase()) >= 0}
                                 >
-                                    {this.state.residences.map((item) => {
+                                    {this.state.parent.map((item) => {
                                         return <Option key={item.id}>{item.text}</Option>
                                     })}
 
