@@ -28,9 +28,9 @@ export default class Router extends React.Component{
 
                                 <Switch>
                                 <Route path='/apidebug/:number' component={Apidebug}/>
-                                <Route exact path='/apidebug/' component={Home} />
+                                <Route exact path='/apidebug' component={Home} />
                                 {/* 重定向根目录到接口目录 */}
-                                <Redirect from="/" to="/apidebug/" />
+                                <Redirect from="/" to="/apidebug" />
                                 <Route component={NoMatch} />
                                 </Switch>
                             </Admin>

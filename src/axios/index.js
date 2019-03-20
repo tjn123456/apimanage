@@ -2,7 +2,7 @@ import axios from "axios"
 
 
 export const get_ajax = (options) => {
-    let baseApi = "http://127.0.0.1:5001"
+    let baseApi = "/"
     return axios({
         url:options.url,
         method:'get',
@@ -13,7 +13,7 @@ export const get_ajax = (options) => {
  }
 
  export const post_ajax = (options) => {
-    let baseApi = "http://127.0.0.1:5001"
+    let baseApi = "/"
     return axios({
         url:options.url,
         method:'post',
